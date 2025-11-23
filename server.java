@@ -1,4 +1,3 @@
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -7,36 +6,37 @@ import java.io.OutputStreamWriter;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class server {
 
-    static ArrayList<String> users = new ArrayList<>();
-    static ConcurrentHashMap<String, ArrayList<String>> chats = new ConcurrentHashMap<>();
+    static CopyOnWriteArrayList<String> users = new CopyOnWriteArrayList<>();
+    static ConcurrentHashMap<String, CopyOnWriteArrayList<String>> chats = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
-        try {
-            // https://link.springer.com/chapter/10.1007/978-1-4842-7135-3_8#PC18
+         try {
 
-            ServerSocket serverSocket = new ServerSocket(9000, 100,
-                    InetAddress.getByName("localhost"));
+            ServerSocket serverSocket =
+                    new ServerSocket(9000, 100,
+                            InetAddress.getByName("localhost"));
             System.out.println("Server started at: " +
                     serverSocket);
-         
+          
             while (true) {
                 System.out.println(
                         "Waiting for a connection...");
-                // Accept a connection
-                final Socket activeSocket = serverSocket.accept();
+    
+                final Socket activeSocket =
+                        serverSocket.accept();
                 System.out.println(
                         "Received a connection from " +
                                 activeSocket);
-             
-                Runnable runnable = () -> handleClientRequest(activeSocket);
+
+                Runnable runnable = () ->
+                        handleClientRequest(activeSocket);
                 new Thread(runnable).start();
-              
+
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -44,104 +44,99 @@ public class server {
     }
 
     public static void handleClientRequest(Socket socket) {
-        BufferedReader socketReader = null;
-        BufferedWriter socketWriter = null;
+        try (BufferedReader socketReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                BufferedWriter socketWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
-        try {
             String currentUser = "";
+            String inMsg;
 
-        
-            socketReader = new BufferedReader(
-                    new InputStreamReader(
-                            socket.getInputStream()));
-            socketWriter = new BufferedWriter(
-                    new OutputStreamWriter(
-                            socket.getOutputStream()));
-            String inMsg = null;
             while ((inMsg = socketReader.readLine()) != null) {
-
-                System.out.println(
-                        "Received from client: " + inMsg);
+                System.out.println("Received from client: " + inMsg);
 
                 if (inMsg.startsWith("LOGIN")) {
-    String username = inMsg.substring(6).trim();
-    currentUser = username;
+                    String username = inMsg.substring(6).trim();
+                    currentUser = username;
 
-    if (!users.contains(username)) {
-        users.add(username);
-    }
+                    if (!users.contains(username)) {
+                        users.add(username);
+                    }
 
-    String returnMessage = "LOGIN Successful-";
+                    chats.putIfAbsent(username, new CopyOnWriteArrayList<>());
+                    CopyOnWriteArrayList<String> messages = chats.get(username);
 
-    chats.putIfAbsent(username, new ArrayList<>());
-    ArrayList<String> messages = chats.get(username);
+                    String returnMessage = "LOGIN Successful-";
+                    for (String m : messages) {
+                        returnMessage += m + "-";
+                    }
+                    messages.clear();
 
-    chats.put(username, new ArrayList<>());
+                    socketWriter.write(returnMessage + "\n");
+                    socketWriter.flush();
 
-    for (String message : messages) {
-        returnMessage += message + "-";
-    }
+                    System.out.println("Logged in user " + username);
+                }
 
-    socketWriter.write(returnMessage + "\n");
-    socketWriter.flush();
-
-    System.out.println("Logged in user " + username);
-}
- else if (inMsg.startsWith("LOGOUT") && !currentUser.isEmpty()) {
+                else if (inMsg.startsWith("LOGOUT") && !currentUser.isEmpty()) {
                     users.remove(currentUser);
-                    System.out.println("logged out user " + currentUser);
                     socketWriter.write("LOGOUT successful\n");
                     socketWriter.flush();
+                    System.out.println("logged out user " + currentUser);
                     currentUser = "";
                 }
 
                 else if (inMsg.startsWith("LIST_USERS") && !currentUser.isEmpty()) {
-                    String message = String.join(",", users);
-                    socketWriter.write(message);
-                    socketWriter.write("\n");
+                    socketWriter.write(String.join(",", users) + "\n");
                     socketWriter.flush();
-                } else if (inMsg.startsWith("MESSAGE") && !currentUser.isEmpty()) {
+                }
+
+                else if (inMsg.startsWith("NEW NOTE") && !currentUser.isEmpty()) {
                     int indexOfSecondSpace = inMsg.indexOf(' ', 8);
-                    String username = inMsg.substring(8, indexOfSecondSpace);
+                    String targetUser = inMsg.substring(8, indexOfSecondSpace);
                     String message = currentUser + ": " + inMsg.substring(indexOfSecondSpace + 1);
 
-                    ArrayList<String> messages = chats.getOrDefault(username, new ArrayList<>());
-                    synchronized (messages) {
-    messages.add(message);
-}
+                    chats.putIfAbsent(targetUser, new CopyOnWriteArrayList<>());
+                    chats.get(targetUser).add(message);
 
-
-                    chats.put(username, messages);
-
-                    socketWriter.write(message);
-                    socketWriter.write("\n");
+                    socketWriter.write("DELIVERED\n");
                     socketWriter.flush();
 
                     System.out.println("saved message: " + message);
                 }
+                else if(inMsg.startsWith("DELETE NOTE") && !currentUser.isEmpty())
+                 {
+                    socketWriter.write("NOTE DELETED");
+                    socketWriter.flush();
+                    System.out.println("Note deleted for " + currentUser);
 
-                else {
+                 }
+                 else if(inMsg.startsWith("WRITE NOTE") && !currentUser.isEmpty())
+                 {
+                    socketWriter.write("NOTE EDITED");
+                    socketWriter.flush();
+                    System.out.println("Note edited for " + currentUser);
+                 }
+                else if(inMsg.startsWith("READ NOTE") && !currentUser.isEmpty())
+                 {
+                    socketWriter.write("NOTE OPENED");
+                    socketWriter.flush();
+                    System.out.println("Note opened for " + currentUser);
+
+                 } else if (inMsg.startsWith("SHUTDOWN") && !currentUser.isEmpty()) {
+                    socketWriter.write("SHUTTING SERVER DOWN\n");
+                    socketWriter.flush();
+                    System.out.println("Server shutting down");
+                    System.exit(0);
+                } else {
                     if (currentUser.isEmpty()) {
-                        socketWriter.write("LOGIN first");
-                        socketWriter.write("\n");
-                        socketWriter.flush();
+                        socketWriter.write("LOGIN first\n");
                     } else {
-                        socketWriter.write("Unknown command");
-                        socketWriter.write("\n");
-                        socketWriter.flush();
+                        socketWriter.write("Unknown command\n");
                     }
-
+                    socketWriter.flush();
                 }
-
             }
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
