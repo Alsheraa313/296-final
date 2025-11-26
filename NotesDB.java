@@ -18,24 +18,20 @@ public class NotesDB {
         return DriverManager.getConnection(dbUrl);
     }
 
-
     public static void insertNote(int userID, String text) throws SQLException {
         Connection connection = getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(
-            "INSERT INTO notesTable (userID, text) VALUES (?, ?)"
-        );
+                "INSERT INTO notesTable (userID, text) VALUES (?, ?)");
         preparedStatement.setInt(1, userID);
         preparedStatement.setString(2, text);
         preparedStatement.execute();
         connection.close();
     }
 
-    
     public static ArrayList<NotesClass> getNotes(int userID) throws SQLException {
         Connection connection = getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(
-            "SELECT noteID, userID, text FROM notesTable WHERE userID = ?"
-        );
+                "SELECT noteID, userID, text FROM notesTable WHERE userID = ?");
         preparedStatement.setInt(1, userID);
         ResultSet noteQuerey = preparedStatement.executeQuery();
 
@@ -43,22 +39,19 @@ public class NotesDB {
 
         while (noteQuerey.next()) {
             list.add(new NotesClass(
-                noteQuerey.getInt("noteID"),
-                noteQuerey.getInt("userID"),
-                noteQuerey.getString("text")
-            ));
+                    noteQuerey.getInt("noteID"),
+                    noteQuerey.getInt("userID"),
+                    noteQuerey.getString("text")));
         }
 
         connection.close();
         return list;
     }
 
-    
     public static void updateNote(int userID, int noteID, String newText) throws SQLException {
         Connection connection = getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(
-            "UPDATE notesTable SET text = ? WHERE noteID = ? AND userID = ?"
-        );
+                "UPDATE notesTable SET text = ? WHERE noteID = ? AND userID = ?");
         preparedStatement.setString(1, newText);
         preparedStatement.setInt(2, noteID);
         preparedStatement.setInt(3, userID);
@@ -66,15 +59,35 @@ public class NotesDB {
         connection.close();
     }
 
-    
     public static void deleteNote(int userID, int noteID) throws SQLException {
         Connection connection = getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(
-            "DELETE FROM notesTable WHERE noteID = ? AND userID = ?"
-        );
+                "DELETE FROM notesTable WHERE noteID = ? AND userID = ?");
         preparedStatement.setInt(1, noteID);
         preparedStatement.setInt(2, userID);
         preparedStatement.executeUpdate();
         connection.close();
+    }
+
+    public static NotesClass getNote(int userID, int noteID) {
+        try (Connection connection = getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(
+                    "SELECT noteID, userID, text FROM notesTable WHERE noteID = ? AND userID = ?");
+            preparedStatement.setInt(1, noteID);
+            preparedStatement.setInt(2, userID);
+            try (ResultSet noteQuerey = preparedStatement.executeQuery()) {
+                if (noteQuerey.next()) {
+                    return new NotesClass(
+                            noteQuerey.getInt("noteID"),
+                            noteQuerey.getInt("userID"),
+                            noteQuerey.getString("text"));
+                } else {
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            return null;
+        }
     }
 }
