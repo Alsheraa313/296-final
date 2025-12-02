@@ -66,13 +66,22 @@ public class server {
                     writer.flush();
                     continue;
                 }
+                else if(inMsg.startsWith("READ ALL NOTES")){
+                    String[] parts = inMsg.split(" ");
 
+                    if (parts.length == 3) {
+                        writer.write(NotesDB.readAllNotes(currentUserID));
+                    } 
+                    else {
+                        writer.write("Invalid format\n");
+                    }
+
+                    writer.flush();
+                }
                 else if (inMsg.startsWith("READ NOTE")) {
                     String[] parts = inMsg.split(" ");
 
-                    if (parts.length == 2) {
-                        writer.write(NotesDB.readAllNotes(currentUserID));
-                    } else if (parts.length == 3) {
+                     if (parts.length == 3) {
                         try {
                             int noteID = Integer.parseInt(parts[2]);
                             writer.write(NotesDB.readNote(currentUserID, noteID));
