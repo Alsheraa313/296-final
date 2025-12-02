@@ -1,3 +1,5 @@
+import java.io.BufferedWriter;
+import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 
@@ -90,4 +92,39 @@ public class NotesDB {
             return null;
         }
     }
+
+   public static String readAllNotes(int userID) throws SQLException {
+    java.util.List<NotesClass> notes = getNotes(userID);
+
+    if (notes.isEmpty()) {
+        return "NO NOTES\n";
+    }
+
+    String note = "";
+    for (int i = 0; i < notes.size(); i++) {
+
+        NotesClass n = notes.get(i);
+
+        note += n.getNoteID() + ": " + n.getText();
+
+        if (i < notes.size() - 1) {
+            note += " | ";
+        }
+    }
+
+    return note + "\n";
+}
+
+public static String readNote(int userID, int noteID) throws SQLException {
+    NotesClass note = getNote(userID, noteID);
+
+    if (note == null) {
+        return "Invalid noteID\n";
+    }
+
+    return note.getNoteID() + ": " + note.getText() + "\n";
+}
+
+
+
 }

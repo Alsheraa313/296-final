@@ -41,7 +41,7 @@ public class server {
                         continue;
                     }
 
-                    writer.write("LOGIN Successful\n");
+                    writer.write("LOGIN SUCCESSFUL\n");
                     writer.flush();
                     System.out.println("Logged in userID " + currentUserID);
                 }
@@ -52,29 +52,42 @@ public class server {
                 }
 
                 else if (inMsg.startsWith("NEW NOTE")) {
+
                     String noteText = inMsg.substring(8).trim();
 
-                    NotesDB.insertNote(currentUserID, noteText);
+                    if (inMsg.length() <= 8 || noteText.isEmpty()) {
+                        writer.write("TEXT REQUIRED\n");
+                        writer.flush();
+                        continue;
+                    }
 
+                    NotesDB.insertNote(currentUserID, noteText);
                     writer.write("DELIVERED\n");
                     writer.flush();
+                    continue;
                 }
 
                 else if (inMsg.startsWith("READ NOTE")) {
+                    String[] parts = inMsg.split(" ");
 
-                    var notes = NotesDB.getNotes(currentUserID);
-
-                    if (notes.isEmpty()) {
-                        writer.write("NO NOTES\n");
-                    } else {
-                        for (NotesClass note : notes) {
-                            writer.write(note.getNoteID() + ": " + note.getText() + "\n");
+                    if (parts.length == 2) {
+                        writer.write(NotesDB.readAllNotes(currentUserID));
+                    } else if (parts.length == 3) {
+                        try {
+                            int noteID = Integer.parseInt(parts[2]);
+                            writer.write(NotesDB.readNote(currentUserID, noteID));
+                        } catch (Exception e) {
+                            writer.write("Invalid noteID\n");
                         }
+                    } else {
+                        writer.write("Invalid format\n");
                     }
+
                     writer.flush();
                 }
 
                 else if (inMsg.startsWith("WRITE NOTE")) {
+
                     String[] parts = inMsg.split(" ", 3);
 
                     if (parts.length < 3) {
@@ -82,25 +95,35 @@ public class server {
                         writer.flush();
                         continue;
                     }
+                    
+                    String[] note = parts[2].split(" ", 2);
+
+                    if (note.length < 2) {
+                        writer.write("FORMAT: WRITE NOTE + ID + TEXT\n");
+                        writer.flush();
+                        continue;
+                    }
 
                     int noteID;
                     try {
-                        noteID = Integer.parseInt(parts[1]);
+                        noteID = Integer.parseInt(note[0]);
                     } catch (Exception e) {
                         writer.write("Invalid noteID\n");
                         writer.flush();
                         continue;
                     }
 
-                    String newText = parts[2];
+                    String newText = note[1];
 
-                    try {
-                        NotesDB.updateNote(currentUserID, noteID, newText);
-                        writer.write("NOTE EDITED\n");
-                    } catch (SQLException e) {
-                        writer.write("ERROR UPDATING NOTE\n");
-                        e.printStackTrace();
+                    NotesClass n = NotesDB.getNote(currentUserID, noteID);
+                    if (n == null) {
+                        writer.write("Invalid noteID\n");
+                        writer.flush();
+                        continue;
                     }
+
+                    NotesDB.updateNote(currentUserID, noteID, newText);
+                    writer.write("NOTE EDITED\n");
                     writer.flush();
                 }
 
