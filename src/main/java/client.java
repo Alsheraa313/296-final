@@ -26,11 +26,11 @@ public class client {
 
             BufferedReader consoleReader = new BufferedReader(
                     new InputStreamReader(System.in));
-            String promptMsg = "Please enter a message (Bye to quit):";
+            String promptMsg = "Please enter a message:";
             String outMsg = null;
             System.out.print(promptMsg);
             while ((outMsg = consoleReader.readLine()) != null) {
-                if (outMsg.equalsIgnoreCase("bye")) {
+                if (outMsg.equalsIgnoreCase("LOGOUT")) {
                     break;
                 }
 

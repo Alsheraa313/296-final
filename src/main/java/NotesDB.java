@@ -1,91 +1,134 @@
+<<<<<<< HEAD:src/main/java/NotesDB.java
 package src.main.java;
+=======
+import java.io.BufferedWriter;
+import java.io.IOException;
+>>>>>>> 0acf7b08d14c5c741bdc2869d2b84efedff2dd30:NotesDB.java
 import java.sql.*;
 import java.util.ArrayList;
 
 public class NotesDB {
 
     private static Connection getConnection() throws SQLException {
-        String dbUrl = "jdbc:sqlite:Notes.db";
-        Connection connection = DriverManager.getConnection(dbUrl);
-
-        Statement stmt = connection.createStatement();
-        stmt.execute("PRAGMA foreign_keys = ON;");
-        stmt.close();
-
-        return connection;
-    }
-
-    public static void insertNote(String text) {
         try {
-            Connection connection = getConnection();
-
-            PreparedStatement preparedStatement = connection.prepareStatement(
-                    "INSERT INTO Notes(text) VALUES (?)");
-
-            preparedStatement.setString(1, text);
-            preparedStatement.execute();
-
-            connection.close();
-        } catch (SQLException e) {
-            System.out.println("SQLException: " + e.getMessage());
+            Class.forName("org.sqlite.JDBC");
+            System.out.println("SQLite JDBC driver loaded successfully");
+        } catch (ClassNotFoundException e) {
+            System.out.println("SQLite JDBC Driver not found!");
+            e.printStackTrace();
         }
+
+        String dbUrl = "jdbc:sqlite:src/notesTable.db";
+        System.out.println("Opening db " + dbUrl);
+
+        return DriverManager.getConnection(dbUrl);
     }
 
-    public static ArrayList<NotesClass> getAllNotes() {
-        ArrayList<NotesClass> notes = new ArrayList<>();
+    public static void insertNote(int userID, String text) throws SQLException {
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(
+                "INSERT INTO notesTable (userID, text) VALUES (?, ?)");
+        preparedStatement.setInt(1, userID);
+        preparedStatement.setString(2, text);
+        preparedStatement.execute();
+        connection.close();
+    }
 
-        try {
-            Connection connection = getConnection();
+    public static ArrayList<NotesClass> getNotes(int userID) throws SQLException {
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(
+                "SELECT noteID, userID, text FROM notesTable WHERE userID = ?");
+        preparedStatement.setInt(1, userID);
+        ResultSet noteQuerey = preparedStatement.executeQuery();
 
+        ArrayList<NotesClass> list = new ArrayList<>();
+
+        while (noteQuerey.next()) {
+            list.add(new NotesClass(
+                    noteQuerey.getInt("noteID"),
+                    noteQuerey.getInt("userID"),
+                    noteQuerey.getString("text")));
+        }
+
+        connection.close();
+        return list;
+    }
+
+    public static void updateNote(int userID, int noteID, String newText) throws SQLException {
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(
+                "UPDATE notesTable SET text = ? WHERE noteID = ? AND userID = ?");
+        preparedStatement.setString(1, newText);
+        preparedStatement.setInt(2, noteID);
+        preparedStatement.setInt(3, userID);
+        preparedStatement.executeUpdate();
+        connection.close();
+    }
+
+    public static void deleteNote(int userID, int noteID) throws SQLException {
+        Connection connection = getConnection();
+        PreparedStatement preparedStatement = connection.prepareStatement(
+                "DELETE FROM notesTable WHERE noteID = ? AND userID = ?");
+        preparedStatement.setInt(1, noteID);
+        preparedStatement.setInt(2, userID);
+        preparedStatement.executeUpdate();
+        connection.close();
+    }
+
+    public static NotesClass getNote(int userID, int noteID) {
+        try (Connection connection = getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement(
-                    "SELECT * FROM Notes");
-
-            ResultSet notesQuerery = preparedStatement.executeQuery();
-
-            while (notesQuerery.next()) {
-                notes.add(new NotesClass(
-                        notesQuerery.getInt("UserID"),
-                        notesQuerery.getString("text")));
+                    "SELECT noteID, userID, text FROM notesTable WHERE noteID = ? AND userID = ?");
+            preparedStatement.setInt(1, noteID);
+            preparedStatement.setInt(2, userID);
+            try (ResultSet noteQuerey = preparedStatement.executeQuery()) {
+                if (noteQuerey.next()) {
+                    return new NotesClass(
+                            noteQuerey.getInt("noteID"),
+                            noteQuerey.getInt("userID"),
+                            noteQuerey.getString("text"));
+                } else {
+                    return null;
+                }
             }
-
-            connection.close();
         } catch (SQLException e) {
-            System.out.println("SQLException: " + e.getMessage());
-        }
-
-        return notes;
-    }
-
-    public static void deleteNote(int id) {
-        try {
-            Connection connection = getConnection();
-
-            PreparedStatement preparedStatement = connection.prepareStatement(
-                    "DELETE FROM Notes WHERE UserID = ?");
-
-            preparedStatement.setInt(1, id);
-            preparedStatement.execute();
-
-            connection.close();
-        } catch (SQLException e) {
-            System.out.println("SQLException: " + e.getMessage());
+            System.out.println(e.getMessage());
+            return null;
         }
     }
 
-    public static void updateNote(int id, String newText) {
-        try {
-            Connection connection = getConnection();
+   public static String readAllNotes(int userID) throws SQLException {
+    java.util.List<NotesClass> notes = getNotes(userID);
 
-            PreparedStatement preparedStatement = connection.prepareStatement(
-                    "UPDATE Notes SET text = ? WHERE UserID = ?");
+    if (notes.isEmpty()) {
+        return "NO NOTES\n";
+    }
 
-            preparedStatement.setString(1, newText);
-            preparedStatement.setInt(2, id);
-            preparedStatement.execute();
+    String note = "";
+    for (int i = 0; i < notes.size(); i++) {
 
-            connection.close();
-        } catch (SQLException e) {
-            System.out.println("SQLException: " + e.getMessage());
+        NotesClass n = notes.get(i);
+
+        note += n.getNoteID() + ": " + n.getText();
+
+        if (i < notes.size() - 1) {
+            note += " | ";
         }
     }
+
+    return note + "\n";
+}
+
+public static String readNote(int userID, int noteID) throws SQLException {
+    NotesClass note = getNote(userID, noteID);
+
+    if (note == null) {
+        return "Invalid noteID\n";
+    }
+
+    return note.getNoteID() + ": " + note.getText() + "\n";
+}
+
+
+
 }
