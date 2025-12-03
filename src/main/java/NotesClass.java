@@ -1,3 +1,4 @@
+package src.main.java;
 public class NotesClass {
     private int UserID;
     private String text;
