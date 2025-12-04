@@ -8,6 +8,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.layout.HBox;
+
 
 public class HelloFX extends Application {
 
@@ -60,23 +62,35 @@ public class HelloFX extends Application {
     }
 
     private void initNotesScene() {
-        notesTitleLabel = new Label("Notes");
+         notesTitleLabel = new Label("Notes");
+
+        Button newButton = new Button("New");
+        newButton.setOnAction(e -> System.out.println("New clicked"));
+
+        Button saveButton = new Button("Save");
+        saveButton.setOnAction(e -> System.out.println("Save clicked"));
+
+        Button deleteButton = new Button("Delete");
+        deleteButton.setOnAction(e -> System.out.println("Delete clicked"));
+
+        Button logoutButton = new Button("Logout");
+        logoutButton.setOnAction(e -> primaryStage.setScene(loginScene));
+
+        HBox toolbar = new HBox(10, newButton, saveButton, deleteButton, logoutButton);
+        toolbar.setPadding(new Insets(10));
+        toolbar.setAlignment(Pos.CENTER_LEFT);
 
         Label info = new Label("This will become the main notes screen.");
-
-        Button backButton = new Button("Back to Login");
-        backButton.setOnAction(e -> primaryStage.setScene(loginScene));
-
-        VBox centerBox = new VBox(10, notesTitleLabel, info, backButton);
+        VBox centerBox = new VBox(20, notesTitleLabel, info);
         centerBox.setAlignment(Pos.CENTER);
 
         BorderPane root = new BorderPane();
+        root.setTop(toolbar);
         root.setCenter(centerBox);
         root.setPadding(new Insets(20));
 
-        notesScene = new Scene(root, 500, 350);
+        notesScene = new Scene(root, 600, 400);
     }
-
     public static void main(String[] args) {
         launch(args);
     }

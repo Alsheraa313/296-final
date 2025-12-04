@@ -16,6 +16,7 @@ public class server {
                     new ServerSocket(9000, 100,
                             InetAddress.getByName("localhost"));
             System.out.println("Server started at: " + serverSocket);
+    
 
             while (true) {
                 System.out.println("Waiting for a connection...");
