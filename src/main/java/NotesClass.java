@@ -1,8 +1,6 @@
-package src.main.java;
 public class NotesClass {
     private int UserID;
     private String text;
-
 
     public NotesClass(int UserID, String text) {
         this.UserID = UserID;
@@ -24,8 +22,6 @@ public class NotesClass {
     public void setText(String text) {
         this.text = text;
     }
-
-
 
     @Override
     public String toString() {
