@@ -1,116 +1,183 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.List;
+import java.io.*;
+import java.net.*;
+import java.sql.SQLException;
 
 public class server {
 
     public static void main(String[] args) {
         try {
-            ServerSocket serverSocket =
-                    new ServerSocket(9000, 100,
-                            InetAddress.getByName("localhost"));
+            ServerSocket serverSocket = new ServerSocket(9000, 100, InetAddress.getByName("localhost"));
+
             System.out.println("Server started at: " + serverSocket);
-    
 
             while (true) {
                 System.out.println("Waiting for a connection...");
+                Socket clientSocket = serverSocket.accept();
+                System.out.println("Received a connection from " + clientSocket);
 
-                final Socket activeSocket = serverSocket.accept();
-                System.out.println("Received a connection from "
-                        + activeSocket.getRemoteSocketAddress());
-
-                Runnable runnable = () -> handleClientRequest(activeSocket);
-                new Thread(runnable).start();
+                new Thread(() -> handleClientRequest(clientSocket)).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    // Handle one client connection
     public static void handleClientRequest(Socket socket) {
-        try (BufferedReader socketReader = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream()));
-             BufferedWriter socketWriter = new BufferedWriter(
-                    new OutputStreamWriter(socket.getOutputStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()))) {
 
+            int currentUserID = -1;
             String inMsg;
 
-            while ((inMsg = socketReader.readLine()) != null) {
-                inMsg = inMsg.trim();
+            while ((inMsg = reader.readLine()) != null) {
                 System.out.println("Received from client: " + inMsg);
 
-                String response;
-
-                // ADD|some note text
-                if (inMsg.startsWith("ADD|")) {
-                    String text = inMsg.substring(4); // everything after "ADD|"
-                    NotesDB.insertNote(text);
-                    response = "OK|Note added";
-
-                // LIST
-                } else if (inMsg.equals("LIST")) {
-                    List<NotesClass> notes = NotesDB.getAllNotes();
-                    StringBuilder sb = new StringBuilder();
-                    for (NotesClass n : notes) {
-                        // format each note as id:text;
-                        sb.append(n.getUserID())
-                          .append(":")
-                          .append(n.getText())
-                          .append(";");
-                    }
-                    response = "LIST|" + sb.toString();
-
-                // DELETE|id
-                } else if (inMsg.startsWith("DELETE|")) {
-                    String idStr = inMsg.substring(7); // after "DELETE|"
+                if (inMsg.startsWith("LOGIN")) {
                     try {
-                        int id = Integer.parseInt(idStr.trim());
-                        NotesDB.deleteNote(id);
-                        response = "OK|Note deleted";
-                    } catch (NumberFormatException e) {
-                        response = "ERROR|Invalid ID for DELETE";
+                        currentUserID = Integer.parseInt(inMsg.substring(6).trim());
+                    } catch (Exception e) {
+                        writer.write("INVALID USERID\n");
+                        writer.flush();
+                        continue;
                     }
 
-                // UPDATE|id|new text
-                } else if (inMsg.startsWith("UPDATE|")) {
-                    String[] parts = inMsg.split("\\|", 3);
-                    if (parts.length < 3) {
-                        response = "ERROR|Bad UPDATE format";
-                    } else {
-                        try {
-                            int id = Integer.parseInt(parts[1].trim());
-                            String newText = parts[2];
-                            NotesDB.updateNote(id, newText);
-                            response = "OK|Note updated";
-                        } catch (NumberFormatException e) {
-                            response = "ERROR|Invalid ID for UPDATE";
-                        }
-                    }
-
-                // EXIT
-                } else if (inMsg.equals("EXIT")) {
-                    response = "OK|Goodbye";
-                    socketWriter.write(response + "\n");
-                    socketWriter.flush();
-                    break; // leave loop and close socket
-
-                } else {
-                    response = "ERROR|Unknown command";
+                    writer.write("LOGIN SUCCESSFUL\n");
+                    writer.flush();
+                    System.out.println("Logged in userID " + currentUserID);
                 }
 
-                socketWriter.write(response + "\n");
-                socketWriter.flush();
-            }
+                else if (currentUserID == -1) {
+                    writer.write("LOGIN first\n");
+                    writer.flush();
+                }
 
-            System.out.println("Client disconnected: " + socket.getRemoteSocketAddress());
-        } catch (IOException e) {
+                else if (inMsg.startsWith("NEW NOTE")) {
+
+                    String noteText = inMsg.substring(8).trim();
+
+                    if (inMsg.length() <= 8 || noteText.isEmpty()) {
+                        writer.write("TEXT REQUIRED\n");
+                        writer.flush();
+                        continue;
+                    }
+
+                    NotesDB.insertNote(currentUserID, noteText);
+                    writer.write("DELIVERED\n");
+                    writer.flush();
+                    continue;
+                }
+                else if(inMsg.startsWith("READ ALL NOTES")){
+                    String[] parts = inMsg.split(" ");
+
+                    if (parts.length == 3) {
+                        writer.write(NotesDB.readAllNotes(currentUserID));
+                    } 
+                    else {
+                        writer.write("Invalid format\n");
+                    }
+
+                    writer.flush();
+                }
+                else if (inMsg.startsWith("READ NOTE")) {
+                    String[] parts = inMsg.split(" ");
+
+                     if (parts.length == 3) {
+                        try {
+                            int noteID = Integer.parseInt(parts[2]);
+                            writer.write(NotesDB.readNote(currentUserID, noteID));
+                        } catch (Exception e) {
+                            writer.write("Invalid noteID\n");
+                        }
+                    } else {
+                        writer.write("Invalid format\n");
+                    }
+
+                    writer.flush();
+                }
+
+                else if (inMsg.startsWith("WRITE NOTE")) {
+
+                    String[] parts = inMsg.split(" ", 3);
+
+                    if (parts.length < 3) {
+                        writer.write("FORMAT: WRITE NOTE + ID + TEXT\n");
+                        writer.flush();
+                        continue;
+                    }
+                    
+                    String[] note = parts[2].split(" ", 2);
+
+                    if (note.length < 2) {
+                        writer.write("FORMAT: WRITE NOTE + ID + TEXT\n");
+                        writer.flush();
+                        continue;
+                    }
+
+                    int noteID;
+                    try {
+                        noteID = Integer.parseInt(note[0]);
+                    } catch (Exception e) {
+                        writer.write("Invalid noteID\n");
+                        writer.flush();
+                        continue;
+                    }
+
+                    String newText = note[1];
+
+                    NotesClass n = NotesDB.getNote(currentUserID, noteID);
+                    if (n == null) {
+                        writer.write("Invalid noteID\n");
+                        writer.flush();
+                        continue;
+                    }
+
+                    NotesDB.updateNote(currentUserID, noteID, newText);
+                    writer.write("NOTE EDITED\n");
+                    writer.flush();
+                }
+
+                else if (inMsg.startsWith("DELETE NOTE")) {
+                    String[] parts = inMsg.split(" ", 3);
+
+                    if (parts.length < 3) {
+                        writer.write("FORMAT: DELETE NOTE + ID\n");
+                        writer.flush();
+                        continue;
+                    }
+
+                    int noteID;
+                    try {
+                        noteID = Integer.parseInt(parts[2]);
+                    } catch (Exception e) {
+                        writer.write("Invalid noteID\n");
+                        writer.flush();
+                        continue;
+                    }
+
+                    try {
+                        NotesDB.deleteNote(currentUserID, noteID);
+                        writer.write("NOTE DELETED\n");
+                    } catch (SQLException e) {
+                        writer.write("ERROR DELETING NOTE\n");
+                        e.printStackTrace();
+                    }
+                    writer.flush();
+                }
+
+                else if (inMsg.startsWith("SHUTDOWN")) {
+                    writer.write("SHUTTING SERVER DOWN\n");
+                    writer.flush();
+                    System.out.println("Server shutting down");
+                    System.exit(0);
+                }
+
+                else {
+                    writer.write("Unknown command\n");
+                    writer.flush();
+                }
+
+            }
+        } catch (IOException | SQLException e) {
             e.printStackTrace();
         }
     }

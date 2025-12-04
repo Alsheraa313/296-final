@@ -1,18 +1,28 @@
 public class NotesClass {
-    private int UserID;
+    private int noteID;
+    private int userID;
     private String text;
 
-    public NotesClass(int UserID, String text) {
-        this.UserID = UserID;
+     public NotesClass(int noteID, int userID, String text) {
+        this.noteID = noteID;
+        this.userID = userID;
         this.text = text;
     }
 
-    public int getUserID() {
-        return UserID;
+    public int getNoteID() {
+        return noteID;
     }
 
-    public void setUserID(int UserID) {
-        this.UserID = UserID;
+    public void setNoteID(int noteID) {
+        this.noteID = noteID;
+    }
+
+    public int getUserID() {
+        return userID;
+    }
+
+    public void setUserID(int userID) {
+        this.userID = userID;
     }
 
     public String getText() {
@@ -25,9 +35,6 @@ public class NotesClass {
 
     @Override
     public String toString() {
-        return "NotesClass{" +
-                "UserID=" + UserID +
-                ", text='" + text + '\'' +
-                '}';
+        return noteID + ": " + text;
     }
 }
