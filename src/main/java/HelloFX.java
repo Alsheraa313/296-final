@@ -4,93 +4,87 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import javafx.scene.layout.HBox;
-
 
 public class HelloFX extends Application {
 
-    private Stage primaryStage;
-    private Scene loginScene;
-    private Scene notesScene;
-
-    private String currentUserName = "";
-    private Label notesTitleLabel;
+    private TextField userIdField;
+    private TextField newNoteField;
+    private TextArea outputArea;
 
     @Override
     public void start(Stage stage) {
-        primaryStage = stage;
-        initNotesScene();
-        initLoginScene();
-        primaryStage.setScene(loginScene);
-        primaryStage.setTitle("Notes App");
-        primaryStage.show();
-    }
-
-    private void initLoginScene() {
-        Label title = new Label("Login");
-        Label prompt = new Label("Enter your name or ID:");
-        TextField nameField = new TextField();
-        nameField.setMaxWidth(200);
-
-        Label errorLabel = new Label();
+        // --- top row: User ID + Login ---
+        Label userIdLabel = new Label("User ID:");
+        userIdField = new TextField();
+        userIdField.setPrefWidth(80);
 
         Button loginButton = new Button("Login");
         loginButton.setOnAction(e -> {
-            String text = nameField.getText().trim();
-            if (text.isEmpty()) {
-                errorLabel.setText("Please enter something.");
+            String id = userIdField.getText().trim();
+            if (id.isEmpty()) {
+                appendLine("Please enter a user ID.");
             } else {
-                currentUserName = text;
-                notesTitleLabel.setText("Notes - User: " + currentUserName);
-                errorLabel.setText("");
-                primaryStage.setScene(notesScene);
+                appendLine("LOGIN as user " + id + " (dummy for now).");
             }
         });
 
-        VBox centerBox = new VBox(10, title, prompt, nameField, loginButton, errorLabel);
-        centerBox.setAlignment(Pos.CENTER);
+        HBox row1 = new HBox(10, userIdLabel, userIdField, loginButton);
+        row1.setAlignment(Pos.CENTER_LEFT);
+
+        // --- second row: New Note + Add Note ---
+        Label newNoteLabel = new Label("New Note:");
+        newNoteField = new TextField();
+        newNoteField.setPrefWidth(400);
+
+        Button addNoteButton = new Button("Add Note");
+        addNoteButton.setOnAction(e -> {
+            String note = newNoteField.getText().trim();
+            if (note.isEmpty()) {
+                appendLine("Please type a note before adding.");
+            } else {
+                appendLine("Added note: " + note);
+                newNoteField.clear();
+            }
+        });
+
+        HBox row2 = new HBox(10, newNoteLabel, newNoteField, addNoteButton);
+        row2.setAlignment(Pos.CENTER_LEFT);
+
+        // you can add more buttons later (Read All, Delete, etc.)
+        // for now we keep it simple
+
+        VBox topBox = new VBox(8, row1, row2);
+        topBox.setPadding(new Insets(10));
+
+        // --- center: big output area ---
+        outputArea = new TextArea();
+        outputArea.setEditable(false);
+        outputArea.setWrapText(true);
 
         BorderPane root = new BorderPane();
-        root.setCenter(centerBox);
-        root.setPadding(new Insets(20));
+        root.setTop(topBox);
+        root.setCenter(outputArea);
+        root.setPadding(new Insets(10));
 
-        loginScene = new Scene(root, 500, 350);
+        Scene scene = new Scene(root, 900, 400);
+        stage.setScene(scene);
+        stage.setTitle("Notes Client (Simple)");
+        stage.show();
     }
 
-    private void initNotesScene() {
-         notesTitleLabel = new Label("Notes");
-
-        Button newButton = new Button("New");
-        newButton.setOnAction(e -> System.out.println("New clicked"));
-
-        Button saveButton = new Button("Save");
-        saveButton.setOnAction(e -> System.out.println("Save clicked"));
-
-        Button deleteButton = new Button("Delete");
-        deleteButton.setOnAction(e -> System.out.println("Delete clicked"));
-
-        Button logoutButton = new Button("Logout");
-        logoutButton.setOnAction(e -> primaryStage.setScene(loginScene));
-
-        HBox toolbar = new HBox(10, newButton, saveButton, deleteButton, logoutButton);
-        toolbar.setPadding(new Insets(10));
-        toolbar.setAlignment(Pos.CENTER_LEFT);
-
-        Label info = new Label("This will become the main notes screen.");
-        VBox centerBox = new VBox(20, notesTitleLabel, info);
-        centerBox.setAlignment(Pos.CENTER);
-
-        BorderPane root = new BorderPane();
-        root.setTop(toolbar);
-        root.setCenter(centerBox);
-        root.setPadding(new Insets(20));
-
-        notesScene = new Scene(root, 600, 400);
+    private void appendLine(String text) {
+        if (!outputArea.getText().isEmpty()) {
+            outputArea.appendText("\n");
+        }
+        outputArea.appendText(text);
     }
+
     public static void main(String[] args) {
         launch(args);
     }
