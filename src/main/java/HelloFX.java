@@ -56,13 +56,12 @@ public class HelloFX extends Application {
         HBox row2 = new HBox(10, newNoteLabel, newNoteField, addNoteButton);
         row2.setAlignment(Pos.CENTER_LEFT);
 
-        // you can add more buttons later (Read All, Delete, etc.)
-        // for now we keep it simple
+        
 
         VBox topBox = new VBox(8, row1, row2);
         topBox.setPadding(new Insets(10));
 
-        // --- center: big output area ---
+        
         outputArea = new TextArea();
         outputArea.setEditable(false);
         outputArea.setWrapText(true);
@@ -74,7 +73,7 @@ public class HelloFX extends Application {
 
         Scene scene = new Scene(root, 900, 400);
         stage.setScene(scene);
-        stage.setTitle("Notes Client (Simple)");
+        stage.setTitle("Notes App");
         stage.show();
     }
 
