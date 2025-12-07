@@ -1,5 +1,7 @@
 package com.example.client;
 
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -20,65 +22,78 @@ public class clientController {
     private BufferedReader socketReader;
     private BufferedWriter socketWriter;
 
-    public VBox noteUI() {
+ public VBox noteUI() {
 
-        Button loginButton = new Button("Login");
-        loginButton.setOnAction(e -> login());
+    Button loginButton = new Button("Login");
+    loginButton.setOnAction(e -> login());
 
-        HBox loginRow = new HBox(10,
-                new Label("User ID:"),
-                userIdField,
-                loginButton
-        );
-        loginRow.setAlignment(Pos.TOP_LEFT);
+    HBox loginRow = new HBox(10,
+            new Label("User ID:"),
+            userIdField,
+            loginButton
+    );
+    loginRow.setAlignment(Pos.TOP_LEFT);
 
-        Button addNoteButton = new Button("Add Note");
-        addNoteButton.setOnAction(e -> newNote());
+    Button addNoteButton = new Button("Add Note");
+    addNoteButton.setOnAction(e -> newNote());
 
-        HBox newNoteRow = new HBox(10,
-                new Label("New Note:"),
-                newNoteField,
-                addNoteButton
-        );
-        newNoteRow.setAlignment(Pos.TOP_LEFT);
+    HBox newNoteRow = new HBox(10,
+            new Label("New Note:"),
+            newNoteField,
+            addNoteButton
+    );
+    newNoteRow.setAlignment(Pos.TOP_LEFT);
 
-        Button readButton = new Button("Read");
-        readButton.setOnAction(e -> readNote());
+    Button readButton = new Button("Read");
+    readButton.setOnAction(e -> readNote());
 
-        Button editButton = new Button("Edit");
-        editButton.setOnAction(e -> editNote());
+    Button editButton = new Button("Edit");
+    editButton.setOnAction(e -> editNote());
 
-        Button deleteButton = new Button("Delete");
-        deleteButton.setOnAction(e -> deleteNote());
+    Button deleteButton = new Button("Delete");
+    deleteButton.setOnAction(e -> deleteNote());
 
-        Button readAllButton = new Button("Read All");
-        readAllButton.setOnAction(e -> readAllNotes());
+    Button readAllButton = new Button("Read All");
+    readAllButton.setOnAction(e -> readAllNotes());
 
-        Button shutdownButton = new Button("Shutdown");
-        shutdownButton.setOnAction(e -> shutdownServer());
+    Button shutdownButton = new Button("Shutdown");
+    shutdownButton.setOnAction(e -> shutdownServer());
 
-        HBox noteActions = new HBox(10,
-        new Label("Note ID:"),
-        noteIdField,
-        new Label("Edit Note:"),
-        noteTextField,
-        readButton,
-        editButton,
-        deleteButton,
-        readAllButton,
-        shutdownButton
-);
-noteActions.setAlignment(Pos.TOP_LEFT);
+    HBox noteActions = new HBox(10,
+            new Label("Note ID:"),
+            noteIdField,
+            new Label("Edit Note:"),
+            noteTextField,
+            readButton,
+            editButton,
+            deleteButton,
+            readAllButton,
+            shutdownButton
+    );
+    noteActions.setAlignment(Pos.TOP_LEFT);
+
+    output.setEditable(false);
+    output.setPrefHeight(600);
+
+    Image logo = new Image(getClass().getResourceAsStream("/notebanner.png"));
+    ImageView logoView = new ImageView(logo);
+    logoView.setFitWidth(700);
+    logoView.setFitHeight(250);
+    logoView.setPreserveRatio(false);
+
+    HBox topRightBox = new HBox(logoView);
+    topRightBox.setAlignment(Pos.CENTER_LEFT);
+
+    
+    VBox root = new VBox(0, topRightBox, loginRow, newNoteRow, noteActions, output);
+    root.setPadding(new Insets(1));
+   
+root.setStyle("-fx-background-color: #83a2bf;"); 
 
 
-        output.setEditable(false);
-        output.setPrefHeight(600);
+    return root;
+}
 
-        VBox root = new VBox(15, loginRow, newNoteRow, noteActions, output);
-        root.setPadding(new Insets(10));
-
-        return root;
-    }
 
     public void connect() {
         try {
