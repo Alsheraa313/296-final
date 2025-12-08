@@ -1,3 +1,11 @@
+RUNNING INSTRUCTIONS
+make sure everything is in the correct filepath and that the pom xml matches 
+
+Compile server: javac -cp "sqlite-jdbc-3.50.3.0.jar:." -d bin *.java
+Run server: java -cp "bin:sqlite-jdbc-3.50.3.0.jar" server
+Compile GUI: mvn clean compile
+Run GUI: mvn javafx:run
+
 <img width="1041" height="600" alt="Screenshot 2025-12-02 12 30 49 AM" src="https://github.com/user-attachments/assets/450d3511-763c-42b9-8c2d-b668886f3e97" />
 
 
