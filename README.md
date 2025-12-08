@@ -1,6 +1,8 @@
 RUNNING INSTRUCTIONS
 make sure everything is in the correct filepath and that the pom xml matches 
 
+First compile and run the server in a terminal, then compile and run the GUI in another
+
 Compile server: javac -cp "sqlite-jdbc-3.50.3.0.jar:." -d bin *.java
 Run server: java -cp "bin:sqlite-jdbc-3.50.3.0.jar" server
 Compile GUI: mvn clean compile
