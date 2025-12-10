@@ -37,3 +37,9 @@ Run GUI: mvn javafx:run
 <img width="1920" height="1140" alt="image" src="https://github.com/user-attachments/assets/c8d2f1ae-7498-4813-b8b2-7bce1dff6f62" />
 
 <img width="1920" height="1140" alt="image" src="https://github.com/user-attachments/assets/800224b6-bb3f-47ce-b650-455fbecc459f" />
+
+When login with ID
+<img width="596" height="430" alt="image" src="https://github.com/user-attachments/assets/9baa2440-be2d-4da6-8de1-4c165a042fa3" />
+<img width="950" height="715" alt="image" src="https://github.com/user-attachments/assets/c29efa0c-40c7-422f-80d3-42d996c3ef05" />
+
+
